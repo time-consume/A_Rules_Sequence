@@ -3,9 +3,9 @@ library(dplyr)
 library(tidyverse)
 library(arulesSequences)
 #9 variables 
-load("cleaned.rdata");dat<-newdis
+load("cleaned.rdata")
 #get the matrix so exclude HHIPD AND YEAR FIRST
-dt<-dat[,-c(1:3)]
+dt<-dat[,-c(1:2)]
 #clear missing value for death
 dt[is.na(dt)]<-0
 #
@@ -13,7 +13,7 @@ mydata <- as(as.matrix(dt),"transactions")
 mydata<-as(mydata,"data.frame")
 dat$items<-mydata$items
 #get the final form to work on
-focus<-dat[,c(1,2,15)]
+focus<-dat[,c(1,2,17)]
 #fix the items and size
 focus$items <- gsub(',',';', focus$items)
 focus$items <- gsub('^.|.$','', focus$items)
@@ -39,7 +39,7 @@ summary(s1)
 
 
 #get the rules
-r1 <- as(ruleInduction(s1, confidence = 0.01, control = list(verbose = TRUE)), "data.frame")
+r1 <- as(ruleInduction(s1, confidence = 0.1, control = list(verbose = TRUE)), "data.frame")
 
 
 # Separate LHS and RHS rules
@@ -48,13 +48,23 @@ max_col <- max(sapply(strsplit(r1$rulecount,' => '),length))
 r_sep <- separate(data = r1, col = rule, into = paste0("Time",1:max_col), sep = " => ")
 #clean Time1
 r_sep$Time1 <- substring(r_sep$Time1,2,nchar(r_sep$Time1)-1)
-#trial<-strsplit(r_sep$Time1,' }, ')
-#rm(trial)
-max_origin <- max(sapply(strsplit(r_sep$Time1,','),length))
-r_sep_new <- separate(data = r_sep, col = Time1, into = paste0("Origin",1:max_origin), sep = ",")
-#clean Time2
+A<-str_split(r_sep$Time1,'[},]',simplify = TRUE)
+A<-A[,c(1:4)]
+A[A==""]<-NA
+B<-t(apply(A, 1, is.na))+0
+C<--B[,2:4]+B[,1:3]
+A[C==1]<-"=>"
+STR<-vector()
+for(i in 1:nrow(A)){
+  STR[i]<-paste(na.omit(A[i,]),collapse = ';')
+  STR[i]<-gsub('[{]','',STR[i])
+}
+STR<-data.frame(STR)
+#done!!!
+origin<-separate(data=STR,col=STR, into = c("T1","T2"),sep = ";=>;")
 r_sep$Time2 <- substring(r_sep$Time2,3,nchar(r_sep$Time2)-2)
-r_sep_new<-separate(data = r_sep_new,col=Time2,into = paste("OUTCOME",1:2),sep = ",")
+outcome<-separate(data=r_sep,col=Time2,into =c("O1","O2"),sep=",")[,c("O1","O2","support","confidence","lift","rulecount")]
 
-write.csv(r_sep_new,"Focus.csv")
+dat<-cbind(origin,outcome)
+write.csv(dat,"Focus.csv")
 
