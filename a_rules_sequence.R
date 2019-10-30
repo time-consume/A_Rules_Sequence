@@ -66,5 +66,5 @@ r_sep$Time2 <- substring(r_sep$Time2,3,nchar(r_sep$Time2)-2)
 outcome<-separate(data=r_sep,col=Time2,into =c("O1","O2"),sep=",")[,c("O1","O2","support","confidence","lift","rulecount")]
 
 dat<-cbind(origin,outcome)
-write.csv(dat,"Focus.csv")
+write.csv(dat,"Outcome.csv")
 
